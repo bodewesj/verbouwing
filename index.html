@@ -138,4 +138,110 @@ function addRow(data={}){
   status.appendChild(statusDropdown);
   row.classList.add("status-"+(data.status||"todo"));
 
-  // Da
+  // Datum, kosten, notities, link
+  let deadline=row.insertCell(); let date=document.createElement("input"); date.type="date"; date.value=data.deadline||""; date.onchange=saveTable; deadline.appendChild(date);
+  createTextCell(row,data.kosten);
+  createTextCell(row,data.notities);
+  createTextCell(row,data.link);
+
+  // Acties
+  let actions=row.insertCell(); actions.classList.add("actions");
+  let del=document.createElement("button"); del.innerText="X"; del.onclick=()=>{row.remove(); saveTable();};
+  actions.appendChild(del);
+
+  // Drag & drop voor prioriteit
+  row.addEventListener("dragstart",(e)=>{ e.dataTransfer.setData("text/plain",row.rowIndex); row.classList.add("dragging"); });
+  row.addEventListener("dragend",(e)=>{ row.classList.remove("dragging"); });
+  row.addEventListener("dragover",(e)=>{ e.preventDefault(); });
+  row.addEventListener("drop",(e)=>{
+    e.preventDefault();
+    const draggedIndex=e.dataTransfer.getData("text/plain");
+    const draggedRow=table.rows[draggedIndex-1];
+    const targetRow=row;
+    if(draggedRow===targetRow) return;
+    if(Array.from(table.rows).indexOf(draggedRow)<Array.from(table.rows).indexOf(targetRow)){
+      table.insertBefore(draggedRow,targetRow.nextSibling);
+    } else{ table.insertBefore(draggedRow,targetRow); }
+    saveTable();
+  });
+
+  saveTable();
+}
+
+function saveTable(){
+  let rows=document.querySelectorAll("#todoTable tbody tr");
+  let data=[];
+  rows.forEach(r=>{
+    let cells=r.cells;
+    data.push({
+      ruimte:cells[0].querySelector("select").value,
+      actie:cells[1].firstChild.value,
+      wie:cells[2].querySelector("select").value,
+      afhankelijk:cells[3].firstChild.value,
+      hardware:cells[4].firstChild.checked,
+      status:cells[5].firstChild.value,
+      deadline:cells[6].firstChild.value,
+      kosten:cells[7].firstChild.value,
+      notities:cells[8].firstChild.value,
+      link:cells[9].firstChild.value
+    });
+  });
+  localStorage.setItem("verbouwingTodo",JSON.stringify(data));
+}
+
+function loadTable(){
+  let table=document.querySelector("#todoTable tbody");
+  table.innerHTML="";
+  let data=localStorage.getItem("verbouwingTodo");
+  if(!data) return;
+  JSON.parse(data).forEach(d=>addRow(d));
+}
+
+function downloadCSV(){
+  let rows=document.querySelectorAll("#todoTable tr");
+  let csv=[];
+  rows.forEach(r=>{
+    let cols=r.querySelectorAll("th,td");
+    let row=[];
+    cols.forEach((c,i)=>{
+      if(i===4){ let checkbox=c.querySelector("input"); row.push(checkbox && checkbox.checked?"ja":"nee"); }
+      else{ let input=c.querySelector("input,select"); row.push(input?input.value:c.innerText); }
+    });
+    csv.push(row.join(","));
+  });
+  let blob=new Blob([csv.join("\n")],{type:"text/csv"});
+  let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="verbouwing_todo.csv"; a.click();
+}
+
+document.getElementById("btnAdd").addEventListener("click",()=>addRow());
+document.getElementById("btnCSV").addEventListener("click",downloadCSV);
+loadTable();
+
+// --- Resizable kolommen ---
+const table=document.getElementById("todoTable");
+let thElements=table.querySelectorAll("th");
+thElements.forEach(th=>{
+  let startX, startWidth;
+  th.addEventListener("mousedown", (e)=>{
+    startX=e.pageX;
+    startWidth=th.offsetWidth;
+    function doDrag(e){
+      th.style.width=(startWidth + e.pageX - startX) + "px";
+    }
+    function stopDrag(){
+      document.removeEventListener("mousemove",doDrag);
+      document.removeEventListener("mouseup",stopDrag);
+    }
+    document.addEventListener("mousemove",doDrag);
+    document.addEventListener("mouseup",stopDrag);
+  });
+});
+
+</script>
+</body>
+</html>
+
+
+
+
+
