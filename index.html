@@ -60,6 +60,9 @@ th{
   margin: 2px 0;
   font-size: 12px;
 }
+tr.dragging{
+  opacity: 0.5;
+}
 </style>
 </head>
 <body>
@@ -136,6 +139,7 @@ document.addEventListener("DOMContentLoaded", function(){
   function addRow(data={}){
     let table=document.querySelector("#todoTable tbody");
     let row=table.insertRow();
+    row.draggable = true;
 
     createTextCell(row,data.ruimte);
     createTextCell(row,data.prio);
@@ -161,20 +165,40 @@ document.addEventListener("DOMContentLoaded", function(){
     createTextCell(row,data.link);
 
     let actions=row.insertCell(); actions.classList.add("actions");
-    let up=document.createElement("button"); up.innerText="↑"; up.onclick=()=>moveRow(row,-1);
-    let down=document.createElement("button"); down.innerText="↓"; down.onclick=()=>moveRow(row,1);
     let del=document.createElement("button"); del.innerText="X"; del.onclick=()=>{row.remove(); saveTable();};
-    actions.appendChild(up); actions.appendChild(down); actions.appendChild(del);
+    actions.appendChild(del);
 
-    saveTable();
-  }
+    // Drag & Drop event handlers
+    row.addEventListener("dragstart",(e)=>{
+      e.dataTransfer.setData("text/plain", row.rowIndex);
+      row.classList.add("dragging");
+    });
+    row.addEventListener("dragend",(e)=>{
+      row.classList.remove("dragging");
+    });
 
-  function moveRow(row,dir){
-    let table=row.parentNode;
-    let index=row.rowIndex-1;
-    let newIndex=index+dir;
-    if(newIndex<0||newIndex>=table.rows.length) return;
-    table.insertBefore(row,table.rows[newIndex]);
+    row.addEventListener("dragover",(e)=>{
+      e.preventDefault();
+    });
+
+    row.addEventListener("drop",(e)=>{
+      e.preventDefault();
+      const draggedIndex = e.dataTransfer.getData("text/plain");
+      const draggedRow = table.rows[draggedIndex-1];
+      const targetRow = row;
+      if(draggedRow === targetRow) return;
+      const tbody = table;
+      const rowsArray = Array.from(tbody.rows);
+      const draggedPos = rowsArray.indexOf(draggedRow);
+      const targetPos = rowsArray.indexOf(targetRow);
+      if(draggedPos < targetPos){
+        tbody.insertBefore(draggedRow, targetRow.nextSibling);
+      } else{
+        tbody.insertBefore(draggedRow, targetRow);
+      }
+      saveTable();
+    });
+
     saveTable();
   }
 
@@ -224,12 +248,12 @@ document.addEventListener("DOMContentLoaded", function(){
     let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="verbouwing_todo.csv"; a.click();
   }
 
-  // event listeners
   document.getElementById("btnAdd").addEventListener("click",()=>addRow());
   document.getElementById("btnCSV").addEventListener("click",downloadCSV);
 
   loadTable();
 });
 </script>
+
 </body>
 </html>
