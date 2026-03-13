@@ -57,7 +57,6 @@ document.addEventListener("DOMContentLoaded",function(){
 let names=["jeroen","ans","jasmijn"];
 let ruimtes=[];
 
-// dynamische dropdown met “Nieuw item…”
 function createDropdown(list,row,value){
   let select=document.createElement("select");
   list.forEach(v=>{ let o=document.createElement("option"); o.text=v; select.add(o); });
@@ -70,16 +69,15 @@ function createDropdown(list,row,value){
         list.push(newItem);
         this.add(new Option(newItem,this.options.length-1));
         this.value=newItem;
-        updateAllDropdowns(list, this);
-      } else { this.value = ""; }
+        updateAllDropdowns(list,this);
+      } else { this.value=""; }
     }
     saveTable();
   });
   return select;
 }
 
-// update alle dropdowns
-function updateAllDropdowns(list, currentSelect){
+function updateAllDropdowns(list,currentSelect){
   document.querySelectorAll("#todoTable tbody tr").forEach(tr=>{
     tr.querySelectorAll("td select").forEach(sel=>{
       if(sel!==currentSelect && list.includes(sel.value)){
@@ -103,7 +101,6 @@ function createStatusDropdown(row,value="todo"){
   return select;
 }
 
-// TEXTAREA CEL i.p.v input
 function createTextCell(row,val=""){
   let cell=row.insertCell();
   let textarea=document.createElement("textarea");
@@ -119,44 +116,37 @@ function addRow(data={}){
   let row=table.insertRow();
   row.draggable=true;
 
-  // RUIMTE dropdown
   let cell=row.insertCell();
   let ruimteSelect=createDropdown(ruimtes,row,data.ruimte||"");
   cell.appendChild(ruimteSelect);
   if(data.ruimte && !ruimtes.includes(data.ruimte)) ruimtes.push(data.ruimte);
 
-  // Actie textarea
   createTextCell(row,data.actie||"");
 
-  // WIE dropdown
   let cellWie=row.insertCell();
   let nameSelect=createDropdown(names,row,data.wie||"");
   cellWie.appendChild(nameSelect);
 
   createTextCell(row,data.afhankelijk||"");
 
-  // Hardware checkbox
   let hw=row.insertCell();
   let checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=data.hardware||false; checkbox.onchange=saveTable; hw.appendChild(checkbox);
 
-  // Status
   let status=row.insertCell();
   let statusDropdown=createStatusDropdown(row,data.status||"todo");
   status.appendChild(statusDropdown);
   row.classList.add("status-"+(data.status||"todo"));
 
-  // Datum, kosten, notities, link
   let deadline=row.insertCell(); let date=document.createElement("input"); date.type="date"; date.value=data.deadline||""; date.onchange=saveTable; deadline.appendChild(date);
   createTextCell(row,data.kosten||"");
   createTextCell(row,data.notities||"");
   createTextCell(row,data.link||"");
 
-  // Acties
   let actions=row.insertCell(); actions.classList.add("actions");
   let del=document.createElement("button"); del.innerText="X"; del.onclick=()=>{row.remove(); saveTable();};
   actions.appendChild(del);
 
-  // Drag & drop
+  // Drag & drop alleen op tbody
   row.addEventListener("dragstart",(e)=>{ e.dataTransfer.setData("text/plain",row.rowIndex); row.classList.add("dragging"); });
   row.addEventListener("dragend",(e)=>{ row.classList.remove("dragging"); });
   row.addEventListener("dragover",(e)=>{ e.preventDefault(); });
@@ -230,7 +220,7 @@ const ths=table.querySelectorAll("th");
 ths.forEach(th=>{
   let startX, startWidth;
   th.addEventListener("mousedown",e=>{
-    if(e.target!==th) return; // alleen resize
+    if(e.target!==th) return;
     startX=e.pageX;
     startWidth=th.offsetWidth;
     function doDrag(e){ th.style.width=(startWidth + e.pageX - startX) + "px"; }
@@ -240,6 +230,7 @@ ths.forEach(th=>{
   });
 });
 
+});
 </script>
 </body>
 </html>
