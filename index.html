@@ -12,13 +12,14 @@ button:hover{background:#0056b3;}
 .table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 table{border-collapse:collapse;width:100%;min-width:900px;background:white;}
 th,td{border:1px solid #ccc;padding:6px;font-size:14px;text-align:left;position:relative;}
-input,select{width:100%;box-sizing:border-box;padding:4px;font-size:14px;}
+textarea, select{width:100%;box-sizing:border-box;padding:4px;font-size:14px;}
 th{background:#eee;cursor:col-resize;}
 .status-todo{background:#fff3cd;}
 .status-bezig{background:#d1ecf1;}
 .status-klaar{background:#d4edda;}
 .actions button{padding:4px 6px;margin:2px 0;font-size:12px;}
 tr.dragging{opacity:0.5;}
+textarea{resize:vertical; min-height:24px;}
 </style>
 </head>
 <body>
@@ -56,7 +57,7 @@ document.addEventListener("DOMContentLoaded",function(){
 let names=["jeroen","ans","jasmijn"];
 let ruimtes=[];
 
-// dropdown functie
+// dynamische dropdown met “Nieuw item…”
 function createDropdown(list,row,value){
   let select=document.createElement("select");
   list.forEach(v=>{ let o=document.createElement("option"); o.text=v; select.add(o); });
@@ -102,11 +103,15 @@ function createStatusDropdown(row,value="todo"){
   return select;
 }
 
+// TEXTAREA CEL i.p.v input
 function createTextCell(row,val=""){
   let cell=row.insertCell();
-  let input=document.createElement("input"); input.value=val; input.onchange=saveTable;
-  cell.appendChild(input);
-  return input;
+  let textarea=document.createElement("textarea");
+  textarea.value=val;
+  textarea.addEventListener('input',function(){ this.style.height='auto'; this.style.height=this.scrollHeight+'px'; saveTable(); });
+  textarea.addEventListener("change",saveTable);
+  cell.appendChild(textarea);
+  return textarea;
 }
 
 function addRow(data={}){
@@ -120,7 +125,7 @@ function addRow(data={}){
   cell.appendChild(ruimteSelect);
   if(data.ruimte && !ruimtes.includes(data.ruimte)) ruimtes.push(data.ruimte);
 
-  // Actie input
+  // Actie textarea
   createTextCell(row,data.actie||"");
 
   // WIE dropdown
@@ -130,19 +135,23 @@ function addRow(data={}){
 
   createTextCell(row,data.afhankelijk||"");
 
+  // Hardware checkbox
   let hw=row.insertCell();
   let checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=data.hardware||false; checkbox.onchange=saveTable; hw.appendChild(checkbox);
 
+  // Status
   let status=row.insertCell();
   let statusDropdown=createStatusDropdown(row,data.status||"todo");
   status.appendChild(statusDropdown);
   row.classList.add("status-"+(data.status||"todo"));
 
+  // Datum, kosten, notities, link
   let deadline=row.insertCell(); let date=document.createElement("input"); date.type="date"; date.value=data.deadline||""; date.onchange=saveTable; deadline.appendChild(date);
   createTextCell(row,data.kosten||"");
   createTextCell(row,data.notities||"");
   createTextCell(row,data.link||"");
 
+  // Acties
   let actions=row.insertCell(); actions.classList.add("actions");
   let del=document.createElement("button"); del.innerText="X"; del.onclick=()=>{row.remove(); saveTable();};
   actions.appendChild(del);
@@ -203,7 +212,7 @@ function downloadCSV(){
     let row=[];
     cols.forEach((c,i)=>{
       if(i===4){ let checkbox=c.querySelector("input"); row.push(checkbox && checkbox.checked?"ja":"nee"); }
-      else{ let input=c.querySelector("input,select"); row.push(input?input.value:c.innerText); }
+      else{ let input=c.querySelector("input,select,textarea"); row.push(input?input.value:c.innerText); }
     });
     csv.push(row.join(","));
   });
@@ -221,7 +230,7 @@ const ths=table.querySelectorAll("th");
 ths.forEach(th=>{
   let startX, startWidth;
   th.addEventListener("mousedown",e=>{
-    if(e.target!==th) return; // alleen resize, niet op button klik
+    if(e.target!==th) return; // alleen resize
     startX=e.pageX;
     startWidth=th.offsetWidth;
     function doDrag(e){ th.style.width=(startWidth + e.pageX - startX) + "px"; }
@@ -231,7 +240,6 @@ ths.forEach(th=>{
   });
 });
 
-});
 </script>
 </body>
 </html>
