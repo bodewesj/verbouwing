@@ -85,4 +85,151 @@ th{
 <th>Hardware</th>
 <th>Status</th>
 <th>Deadline</th>
-<th>Koste
+<th>Kosten</th>
+<th>Notities</th>
+<th>Link</th>
+<th>Acties</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+  let names = ["jeroen","ans","jasmijn"];
+
+  function createNameDropdown(value=""){
+    let select=document.createElement("select");
+    names.forEach(n=>{ let o=document.createElement("option"); o.text=n; select.add(o); });
+    let add=document.createElement("option"); add.text="Nieuwe naam..."; select.add(add);
+    if(value) select.value=value;
+    select.onchange=function(){
+      if(this.value==="Nieuwe naam..."){
+        let newName=prompt("Nieuwe naam:");
+        if(newName){ names.push(newName); let o=document.createElement("option"); o.text=newName; this.add(o,this.options.length-1); this.value=newName; saveTable(); }
+      }
+      saveTable();
+    };
+    return select;
+  }
+
+  function createStatusDropdown(row,value="todo"){
+    let select=document.createElement("select");
+    ["todo","bezig","klaar"].forEach(s=>{ let o=document.createElement("option"); o.text=s; select.add(o); });
+    select.value=value;
+    select.onchange=function(){
+      row.classList.remove("status-todo","status-bezig","status-klaar");
+      row.classList.add("status-"+this.value);
+      saveTable();
+    };
+    return select;
+  }
+
+  function createTextCell(row,val=""){
+    let cell=row.insertCell();
+    let input=document.createElement("input"); input.value=val; input.onchange=saveTable;
+    cell.appendChild(input);
+  }
+
+  function addRow(data={}){
+    let table=document.querySelector("#todoTable tbody");
+    let row=table.insertRow();
+
+    createTextCell(row,data.ruimte);
+    createTextCell(row,data.prio);
+    createTextCell(row,data.actie);
+
+    let nameCell=row.insertCell();
+    nameCell.appendChild(createNameDropdown(data.wie));
+
+    createTextCell(row,data.afhankelijk);
+
+    let hw=row.insertCell();
+    let checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=data.hardware||false; checkbox.onchange=saveTable; hw.appendChild(checkbox);
+
+    let status=row.insertCell();
+    let statusDropdown=createStatusDropdown(row,data.status||"todo");
+    status.appendChild(statusDropdown);
+    row.classList.add("status-"+(data.status||"todo"));
+
+    let deadline=row.insertCell(); let date=document.createElement("input"); date.type="date"; date.value=data.deadline||""; date.onchange=saveTable; deadline.appendChild(date);
+
+    createTextCell(row,data.kosten);
+    createTextCell(row,data.notities);
+    createTextCell(row,data.link);
+
+    let actions=row.insertCell(); actions.classList.add("actions");
+    let up=document.createElement("button"); up.innerText="↑"; up.onclick=()=>moveRow(row,-1);
+    let down=document.createElement("button"); down.innerText="↓"; down.onclick=()=>moveRow(row,1);
+    let del=document.createElement("button"); del.innerText="X"; del.onclick=()=>{row.remove(); saveTable();};
+    actions.appendChild(up); actions.appendChild(down); actions.appendChild(del);
+
+    saveTable();
+  }
+
+  function moveRow(row,dir){
+    let table=row.parentNode;
+    let index=row.rowIndex-1;
+    let newIndex=index+dir;
+    if(newIndex<0||newIndex>=table.rows.length) return;
+    table.insertBefore(row,table.rows[newIndex]);
+    saveTable();
+  }
+
+  function saveTable(){
+    let rows=document.querySelectorAll("#todoTable tbody tr");
+    let data=[];
+    rows.forEach(r=>{
+      let cells=r.cells;
+      data.push({
+        ruimte:cells[0].firstChild.value,
+        prio:cells[1].firstChild.value,
+        actie:cells[2].firstChild.value,
+        wie:cells[3].firstChild.value,
+        afhankelijk:cells[4].firstChild.value,
+        hardware:cells[5].firstChild.checked,
+        status:cells[6].firstChild.value,
+        deadline:cells[7].firstChild.value,
+        kosten:cells[8].firstChild.value,
+        notities:cells[9].firstChild.value,
+        link:cells[10].firstChild.value
+      });
+    });
+    localStorage.setItem("verbouwingTodo",JSON.stringify(data));
+  }
+
+  function loadTable(){
+    let table=document.querySelector("#todoTable tbody");
+    table.innerHTML="";
+    let data=localStorage.getItem("verbouwingTodo");
+    if(!data) return;
+    JSON.parse(data).forEach(d=>addRow(d));
+  }
+
+  function downloadCSV(){
+    let rows=document.querySelectorAll("#todoTable tr");
+    let csv=[];
+    rows.forEach(r=>{
+      let cols=r.querySelectorAll("th,td");
+      let row=[];
+      cols.forEach((c,i)=>{
+        if(i===5){ let checkbox=c.querySelector("input"); row.push(checkbox && checkbox.checked?"ja":"nee"); }
+        else{ let input=c.querySelector("input,select"); row.push(input?input.value:c.innerText); }
+      });
+      csv.push(row.join(","));
+    });
+    let blob=new Blob([csv.join("\n")],{type:"text/csv"});
+    let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="verbouwing_todo.csv"; a.click();
+  }
+
+  // event listeners
+  document.getElementById("btnAdd").addEventListener("click",()=>addRow());
+  document.getElementById("btnCSV").addEventListener("click",downloadCSV);
+
+  loadTable();
+});
+</script>
+</body>
+</html>
