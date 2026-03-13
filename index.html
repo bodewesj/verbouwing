@@ -116,13 +116,16 @@ function addRow(data={}){
   let row=table.insertRow();
   row.draggable=true;
 
+  // Eerst ruimte toevoegen aan lijst zodat value correct wordt ingesteld
+  if(data.ruimte && !ruimtes.includes(data.ruimte)) ruimtes.push(data.ruimte);
   let cell=row.insertCell();
   let ruimteSelect=createDropdown(ruimtes,row,data.ruimte||"");
   cell.appendChild(ruimteSelect);
-  if(data.ruimte && !ruimtes.includes(data.ruimte)) ruimtes.push(data.ruimte);
 
   createTextCell(row,data.actie||"");
 
+  // Wie dropdown
+  if(data.wie && !names.includes(data.wie)) names.push(data.wie);
   let cellWie=row.insertCell();
   let nameSelect=createDropdown(names,row,data.wie||"");
   cellWie.appendChild(nameSelect);
@@ -146,7 +149,7 @@ function addRow(data={}){
   let del=document.createElement("button"); del.innerText="X"; del.onclick=()=>{row.remove(); saveTable();};
   actions.appendChild(del);
 
-  // Drag & drop alleen op tbody
+  // Drag & drop op tbody
   row.addEventListener("dragstart",(e)=>{ e.dataTransfer.setData("text/plain",row.rowIndex); row.classList.add("dragging"); });
   row.addEventListener("dragend",(e)=>{ row.classList.remove("dragging"); });
   row.addEventListener("dragover",(e)=>{ e.preventDefault(); });
