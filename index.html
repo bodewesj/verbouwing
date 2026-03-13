@@ -5,58 +5,54 @@
 <title>Verbouwing Todo</title>
 
 <style>
-
 body{
-font-family:Arial;
-margin:40px;
-background:#f5f5f5;
+  font-family:Arial;
+  margin:40px;
+  background:#f5f5f5;
 }
 
 h2{
-margin-bottom:10px;
+  margin-bottom:10px;
 }
 
 button{
-margin:3px;
-padding:6px 10px;
+  margin:3px;
+  padding:6px 10px;
 }
 
 table{
-border-collapse:collapse;
-width:100%;
-background:white;
+  border-collapse:collapse;
+  width:100%;
+  background:white;
 }
 
 th,td{
-border:1px solid #ccc;
-padding:6px;
-font-size:14px;
+  border:1px solid #ccc;
+  padding:6px;
+  font-size:14px;
 }
 
 input,select{
-width:100%;
-box-sizing:border-box;
+  width:100%;
+  box-sizing:border-box;
 }
 
 th{
-background:#eee;
+  background:#eee;
 }
-
 </style>
 
 </head>
-
 <body>
 
 <h2>Verbouwing Todo</h2>
 
-<button onclick="addRow()">Nieuwe taak</button>
-<button onclick="downloadCSV()">Download CSV</button>
+<button id="btnAdd">Nieuwe taak</button>
+<button id="btnCSV">Download CSV</button>
 
 <br><br>
 
 <table id="todoTable">
-
 <thead>
 <tr>
 <th>Ruimte</th>
@@ -73,37 +69,25 @@ background:#eee;
 <th>Acties</th>
 </tr>
 </thead>
-
 <tbody></tbody>
-
 </table>
 
 <script>
-
 let names = ["jeroen","ans","jasmijn"];
 
+// dropdown voor "wie"
 function createNameDropdown(value=""){
+  let select=document.createElement("select");
+  names.forEach(n=>{
+    let o=document.createElement("option");
+    o.text=n;
+    select.add(o);
+  });
+  let add=document.createElement("option");
+  add.text="Nieuwe naam...";
+  select.add(add);
+  if(value) select.value=value;
 
-let select=document.createElement("select");
-
-names.forEach(n=>{
-let o=document.createElement("option");
-o.text=n;
-select.add(o);
-});
-
-let add=document.createElement("option");
-add.text="Nieuwe naam...";
-select.add(add);
-
-if(value) select.value=value;
-
-select.onchange=function(){
-
-if(this.value==="Nieuwe naam..."){
-
-let newName=prompt("Nieuwe naam:");
-
-if(newName){
-
-names.pus
+  select.onchange=function(){
+    if(this.value==="Nieuwe naam..."){
+      let newName=prompt("Ni
