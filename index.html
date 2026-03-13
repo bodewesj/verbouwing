@@ -57,17 +57,29 @@ document.addEventListener("DOMContentLoaded",function(){
 let names=["jeroen","ans","jasmijn"];
 let ruimtes=[];
 
+// dropdown maken met juiste value
 function createDropdown(list,row,value){
   let select=document.createElement("select");
-  list.forEach(v=>{ let o=document.createElement("option"); o.text=v; select.add(o); });
-  let add=document.createElement("option"); add.text="Nieuw item..."; select.add(add);
+  list.forEach(v=>{
+    let o=document.createElement("option");
+    o.text=v;
+    o.value=v;  // belangrijk: value = naam
+    select.add(o);
+  });
+  let add=document.createElement("option"); 
+  add.text="Nieuw item..."; 
+  add.value="__nieuw__"; 
+  select.add(add);
+
   if(value) select.value=value;
+
   select.addEventListener("change",function(){
-    if(this.value==="Nieuw item..."){
+    if(this.value==="__nieuw__"){
       let newItem=prompt("Nieuwe invoer:");
       if(newItem){
         list.push(newItem);
-        this.add(new Option(newItem,this.options.length-1));
+        let o = new Option(newItem,newItem);
+        this.add(o);
         this.value=newItem;
         updateAllDropdowns(list,this);
       } else { this.value=""; }
@@ -77,12 +89,13 @@ function createDropdown(list,row,value){
   return select;
 }
 
+// update alle dropdowns
 function updateAllDropdowns(list,currentSelect){
   document.querySelectorAll("#todoTable tbody tr").forEach(tr=>{
     tr.querySelectorAll("td select").forEach(sel=>{
       if(sel!==currentSelect && list.includes(sel.value)){
         if(!Array.from(sel.options).some(o=>o.value===sel.value)){
-          sel.add(new Option(sel.value,sel.options.length-1));
+          sel.add(new Option(sel.value,sel.value));
         }
       }
     });
@@ -91,7 +104,7 @@ function updateAllDropdowns(list,currentSelect){
 
 function createStatusDropdown(row,value="todo"){
   let select=document.createElement("select");
-  ["todo","bezig","klaar"].forEach(s=>{ let o=document.createElement("option"); o.text=s; select.add(o); });
+  ["todo","bezig","klaar"].forEach(s=>{ let o=document.createElement("option"); o.text=s; o.value=s; select.add(o); });
   select.value=value;
   select.onchange=function(){
     row.classList.remove("status-todo","status-bezig","status-klaar");
@@ -101,6 +114,7 @@ function createStatusDropdown(row,value="todo"){
   return select;
 }
 
+// textarea cel
 function createTextCell(row,val=""){
   let cell=row.insertCell();
   let textarea=document.createElement("textarea");
@@ -116,12 +130,13 @@ function addRow(data={}){
   let row=table.insertRow();
   row.draggable=true;
 
-  // Eerst ruimte toevoegen aan lijst zodat value correct wordt ingesteld
+  // Ruimte
   if(data.ruimte && !ruimtes.includes(data.ruimte)) ruimtes.push(data.ruimte);
   let cell=row.insertCell();
   let ruimteSelect=createDropdown(ruimtes,row,data.ruimte||"");
   cell.appendChild(ruimteSelect);
 
+  // Actie textarea
   createTextCell(row,data.actie||"");
 
   // Wie dropdown
@@ -149,7 +164,7 @@ function addRow(data={}){
   let del=document.createElement("button"); del.innerText="X"; del.onclick=()=>{row.remove(); saveTable();};
   actions.appendChild(del);
 
-  // Drag & drop op tbody
+  // Drag & drop
   row.addEventListener("dragstart",(e)=>{ e.dataTransfer.setData("text/plain",row.rowIndex); row.classList.add("dragging"); });
   row.addEventListener("dragend",(e)=>{ row.classList.remove("dragging"); });
   row.addEventListener("dragover",(e)=>{ e.preventDefault(); });
@@ -233,7 +248,6 @@ ths.forEach(th=>{
   });
 });
 
-});
 </script>
 </body>
 </html>
