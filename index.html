@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Verbouwing Todo</title>
+
+<style>
+body{
+font-family:Arial;
+margin:40px;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:6px;
+}
+
+button{
+margin:2px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Verbouwing Todo</h2>
+
+<button onclick="addRow()">Nieuwe taak</button>
+<button onclick="downloadCSV()">Download CSV</button>
+
+<table id="todoTable">
+<thead>
+<tr>
+<th>Ruimte</th>
+<th>Prio</th>
+<th>Actie</th>
+<th>Wie</th>
+<th>Afhankelijk van</th>
+<th>Hardware bestellen</th>
+<th>Acties</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<script>
+
+let names = ["jeroen","ans","jasmijn"];
+
+function createNameDropdown(){
+
+let select = document.createElement("select");
+
+names.forEach(n=>{
+let option = document.createElement("option");
+option.text=n;
+select.add(option);
+});
+
+let add = document.createElement("option");
+add.text="Nieuwe naam...";
+select.add(add);
+
+select.onchange=function(){
+if(this.value==="Nieuwe naam..."){
+let newName=prompt("Naam toevoegen");
+if(newName){
+names.push(newName);
+let option=document.createElement("option");
+option.text=newName;
+this.add(option,this.options.length-1);
+this.value=newName;
+}
+}
+};
+
+return select;
+}
+
+function addRow(){
+
+let table=document.getElementById("todoTable").getElementsByTagName('tbody')[0];
+let row=table.insertRow();
+
+row.insertCell().contentEditable=true;
+row.insertCell().contentEditable=true;
+row.insertCell().contentEditable=true;
+
+let nameCell=row.insertCell();
+nameCell.appendChild(createNameDropdown());
+
+row.insertCell().contentEditable=true;
+
+let hw=row.insertCell();
+let checkbox=document.createElement("input");
+checkbox.type="checkbox";
+hw.appendChild(checkbox);
+
+let actions=row.insertCell();
+
+let up=document.createElement("button");
+up.innerText="↑";
+up.onclick=()=>moveRow(row,-1);
+
+let down=document.createElement("button");
+down.innerText="↓";
+down.onclick=()=>moveRow(row,1);
+
+actions.appendChild(up);
+actions.appendChild(down);
+
+}
+
+function moveRow(row,dir){
+
+let table=row.parentNode;
+let index=row.rowIndex-1;
+
+let newIndex=index+dir;
+
+if(newIndex<0||newIndex>=table.rows.length) return;
+
+table.insertBefore(row,table.rows[newIndex]);
+}
+
+function downloadCSV(){
+
+let rows=document.querySelectorAll("table tr");
+let csv=[];
+
+rows.forEach(row=>{
+let cols=row.querySelectorAll("td, th");
+let data=[];
+cols.forEach(col=>{
+data.push(col.innerText);
+});
+csv.push(data.join(","));
+});
+
+let blob=new Blob([csv.join("\n")],{type:"text/csv"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="verbouwing_todo.csv";
+a.click();
+}
+
+</script>
+
+</body>
+</html>
