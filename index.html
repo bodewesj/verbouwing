@@ -6,18 +6,17 @@
 <title>Verbouwing Todo</title>
 
 <style>
+
 body{
 font-family:Arial;
-margin:10px;
 background:#f4f4f4;
+margin:10px;
 }
 
-h2{
-text-align:center;
-}
+h2{text-align:center;}
 
 button{
-padding:8px 14px;
+padding:8px 12px;
 margin:5px;
 border:none;
 background:#007bff;
@@ -46,58 +45,67 @@ border:1px solid #ccc;
 padding:6px;
 }
 
-th{
-background:#eee;
-cursor:col-resize;
-}
+th{background:#eee;}
 
 textarea,select,input{
 width:100%;
 box-sizing:border-box;
-font-size:14px;
 }
 
 textarea{
-resize:vertical;
 min-height:26px;
+resize:vertical;
 }
 
-.status-todo{
-background:#fff3cd;
+.status-todo{background:#fff3cd;}
+.status-bezig{background:#d1ecf1;}
+.status-klaar{background:#d4edda;}
+
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
 }
 
-.status-bezig{
-background:#d1ecf1;
+.modal-content{
+background:white;
+padding:20px;
+margin:80px auto;
+width:300px;
+border-radius:6px;
 }
 
-.status-klaar{
-background:#d4edda;
+.list-item{
+display:flex;
+justify-content:space-between;
+margin-bottom:5px;
 }
 
-tr.dragging{
-opacity:0.4;
-}
-
-.actions button{
-font-size:12px;
-padding:4px 6px;
-}
 </style>
-
 </head>
+
 <body>
 
 <h2>Verbouwing Todo</h2>
 
-<div style="text-align:center;">
+<div style="text-align:center">
+
 <button onclick="addRow()">Nieuwe taak</button>
 <button onclick="downloadCSV()">Download CSV</button>
+<button onclick="openOptions()">Opties beheren</button>
+
 </div>
 
 <div class="table-wrapper">
+
 <table id="todoTable">
 
 <thead>
+
 <tr>
 <th>Ruimte</th>
 <th>Actie</th>
@@ -109,94 +117,77 @@ padding:4px 6px;
 <th>Kosten</th>
 <th>Notities</th>
 <th>Link</th>
-<th>Acties</th>
+<th></th>
 </tr>
+
 </thead>
 
 <tbody></tbody>
 
 </table>
+
+</div>
+
+<!-- OPTIES MODAL -->
+
+<div class="modal" id="optionsModal">
+
+<div class="modal-content">
+
+<h3>Ruimtes</h3>
+
+<div id="ruimteList"></div>
+
+<input id="newRuimte" placeholder="Nieuwe ruimte">
+<button onclick="addRuimte()">Toevoegen</button>
+
+<hr>
+
+<h3>Personen</h3>
+
+<div id="nameList"></div>
+
+<input id="newName" placeholder="Nieuwe naam">
+<button onclick="addName()">Toevoegen</button>
+
+<br><br>
+
+<button onclick="closeOptions()">Sluiten</button>
+
+</div>
+
 </div>
 
 <script>
 
-let ruimtes=[]
-let names=["jeroen","ans","jasmijn"]
+let ruimtes=JSON.parse(localStorage.getItem("ruimtes"))||[]
+let names=JSON.parse(localStorage.getItem("names"))||["jeroen","ans","jasmijn"]
 
+function saveOptions(){
 
+localStorage.setItem("ruimtes",JSON.stringify(ruimtes))
+localStorage.setItem("names",JSON.stringify(names))
+
+}
 
 function createDropdown(list,value){
 
 let select=document.createElement("select")
 
 list.forEach(v=>{
-let o=document.createElement("option")
-o.text=v
-o.value=v
-select.add(o)
-})
 
-let add=document.createElement("option")
-add.text="Nieuw item..."
-add.value="nieuw"
-select.add(add)
+let o=new Option(v,v)
+select.add(o)
+
+})
 
 select.value=value||""
 
-select.onchange=function(){
-
-if(this.value==="nieuw"){
-
-let n=prompt("Nieuwe invoer")
-
-if(n){
-
-list.push(n)
-
-let o=new Option(n,n)
-this.add(o)
-
-this.value=n
-
-updateAllDropdowns()
-
-}
-
-}
-
-saveTable()
-
-}
+select.onchange=saveTable
 
 return select
-}
-
-
-
-function updateAllDropdowns(){
-
-document.querySelectorAll("#todoTable tbody tr").forEach(r=>{
-
-let ruimte=r.cells[0].querySelector("select")
-let wie=r.cells[2].querySelector("select")
-
-ruimtes.forEach(v=>{
-if(![...ruimte.options].some(o=>o.value===v)){
-ruimte.add(new Option(v,v))
-}
-})
-
-names.forEach(v=>{
-if(![...wie.options].some(o=>o.value===v)){
-wie.add(new Option(v,v))
-}
-})
-
-})
 
 }
-
-
 
 function createTextarea(val=""){
 
@@ -217,71 +208,41 @@ return t
 
 }
 
-
-
 function addRow(data={}){
 
 let tbody=document.querySelector("#todoTable tbody")
 
 let row=tbody.insertRow()
 
-row.draggable=true
-
-
-
-if(data.ruimte && !ruimtes.includes(data.ruimte)){
-ruimtes.push(data.ruimte)
-}
-
-
-
 let ruimte=row.insertCell()
-
 ruimte.appendChild(createDropdown(ruimtes,data.ruimte))
 
-
-
 let actie=row.insertCell()
-
 actie.appendChild(createTextarea(data.actie))
 
-
-
-if(data.wie && !names.includes(data.wie)){
-names.push(data.wie)
-}
-
 let wie=row.insertCell()
-
 wie.appendChild(createDropdown(names,data.wie))
 
-
-
 let afh=row.insertCell()
-
 afh.appendChild(createTextarea(data.afhankelijk))
-
-
 
 let hw=row.insertCell()
 
 let cb=document.createElement("input")
-
 cb.type="checkbox"
 cb.checked=data.hardware||false
 cb.onchange=saveTable
 
 hw.appendChild(cb)
 
-
-
 let status=row.insertCell()
 
 let s=document.createElement("select")
 
 ;["todo","bezig","klaar"].forEach(v=>{
-let o=new Option(v,v)
-s.add(o)
+
+s.add(new Option(v,v))
+
 })
 
 s.value=data.status||"todo"
@@ -299,46 +260,28 @@ saveTable()
 
 status.appendChild(s)
 
-
-
 let dl=row.insertCell()
 
 let date=document.createElement("input")
-
 date.type="date"
 date.value=data.deadline||""
 date.onchange=saveTable
 
 dl.appendChild(date)
 
-
-
 let kosten=row.insertCell()
-
 kosten.appendChild(createTextarea(data.kosten))
 
-
-
 let not=row.insertCell()
-
 not.appendChild(createTextarea(data.notities))
 
-
-
 let link=row.insertCell()
-
 link.appendChild(createTextarea(data.link))
-
-
 
 let act=row.insertCell()
 
-act.className="actions"
-
 let del=document.createElement("button")
-
 del.innerText="X"
-
 del.onclick=function(){
 
 row.remove()
@@ -348,41 +291,9 @@ saveTable()
 
 act.appendChild(del)
 
-
-
-row.addEventListener("dragstart",e=>{
-row.classList.add("dragging")
-e.dataTransfer.setData("text/plain","drag")
-})
-
-row.addEventListener("dragend",e=>{
-row.classList.remove("dragging")
-saveTable()
-})
-
-row.addEventListener("dragover",e=>{
-e.preventDefault()
-})
-
-row.addEventListener("drop",e=>{
-
-e.preventDefault()
-
-let dragging=document.querySelector(".dragging")
-
-if(dragging!==row){
-
-tbody.insertBefore(dragging,row)
-
-}
-
-})
-
 saveTable()
 
 }
-
-
 
 function saveTable(){
 
@@ -397,23 +308,14 @@ let c=r.cells
 data.push({
 
 ruimte:c[0].querySelector("select").value,
-
 actie:c[1].firstChild.value,
-
 wie:c[2].querySelector("select").value,
-
 afhankelijk:c[3].firstChild.value,
-
 hardware:c[4].firstChild.checked,
-
 status:c[5].firstChild.value,
-
 deadline:c[6].firstChild.value,
-
 kosten:c[7].firstChild.value,
-
 notities:c[8].firstChild.value,
-
 link:c[9].firstChild.value
 
 })
@@ -424,19 +326,13 @@ localStorage.setItem("verbouwingTodo",JSON.stringify(data))
 
 }
 
-
-
 function loadTable(){
 
-let data=localStorage.getItem("verbouwingTodo")
+let data=JSON.parse(localStorage.getItem("verbouwingTodo"))||[]
 
-if(!data) return
-
-JSON.parse(data).forEach(d=>addRow(d))
+data.forEach(d=>addRow(d))
 
 }
-
-
 
 function downloadCSV(){
 
@@ -486,7 +382,109 @@ a.click()
 
 }
 
+function openOptions(){
 
+document.getElementById("optionsModal").style.display="block"
+
+renderOptionLists()
+
+}
+
+function closeOptions(){
+
+document.getElementById("optionsModal").style.display="none"
+
+saveOptions()
+
+}
+
+function renderOptionLists(){
+
+let r=document.getElementById("ruimteList")
+r.innerHTML=""
+
+ruimtes.forEach((v,i)=>{
+
+let d=document.createElement("div")
+d.className="list-item"
+
+d.innerHTML=v+" <button onclick='deleteRuimte("+i+")'>X</button>"
+
+r.appendChild(d)
+
+})
+
+let n=document.getElementById("nameList")
+n.innerHTML=""
+
+names.forEach((v,i)=>{
+
+let d=document.createElement("div")
+d.className="list-item"
+
+d.innerHTML=v+" <button onclick='deleteName("+i+")'>X</button>"
+
+n.appendChild(d)
+
+})
+
+}
+
+function addRuimte(){
+
+let v=document.getElementById("newRuimte").value
+
+if(v){
+
+ruimtes.push(v)
+
+document.getElementById("newRuimte").value=""
+
+renderOptionLists()
+
+saveOptions()
+
+}
+
+}
+
+function addName(){
+
+let v=document.getElementById("newName").value
+
+if(v){
+
+names.push(v)
+
+document.getElementById("newName").value=""
+
+renderOptionLists()
+
+saveOptions()
+
+}
+
+}
+
+function deleteRuimte(i){
+
+ruimtes.splice(i,1)
+
+renderOptionLists()
+
+saveOptions()
+
+}
+
+function deleteName(i){
+
+names.splice(i,1)
+
+renderOptionLists()
+
+saveOptions()
+
+}
 
 loadTable()
 
