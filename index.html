@@ -4,34 +4,99 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verbouwing Todo</title>
+
 <style>
-body{font-family:Arial;margin:10px;background:#f5f5f5;}
-h2{text-align:center;color:#333;}
-button{margin:4px 2px;padding:8px 12px;font-size:14px;border:none;background:#007bff;color:white;border-radius:5px;cursor:pointer;}
-button:hover{background:#0056b3;}
-.table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-table{border-collapse:collapse;width:100%;min-width:900px;background:white;}
-th,td{border:1px solid #ccc;padding:6px;font-size:14px;text-align:left;position:relative;}
-textarea, select{width:100%;box-sizing:border-box;padding:4px;font-size:14px;}
-th{background:#eee;cursor:col-resize;}
-.status-todo{background:#fff3cd;}
-.status-bezig{background:#d1ecf1;}
-.status-klaar{background:#d4edda;}
-.actions button{padding:4px 6px;margin:2px 0;font-size:12px;}
-tr.dragging{opacity:0.5;}
-textarea{resize:vertical; min-height:24px;}
+body{
+font-family:Arial;
+margin:10px;
+background:#f4f4f4;
+}
+
+h2{
+text-align:center;
+}
+
+button{
+padding:8px 14px;
+margin:5px;
+border:none;
+background:#007bff;
+color:white;
+border-radius:5px;
+cursor:pointer;
+}
+
+button:hover{
+background:#0056b3;
+}
+
+.table-wrapper{
+overflow-x:auto;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+min-width:900px;
+background:white;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:6px;
+}
+
+th{
+background:#eee;
+cursor:col-resize;
+}
+
+textarea,select,input{
+width:100%;
+box-sizing:border-box;
+font-size:14px;
+}
+
+textarea{
+resize:vertical;
+min-height:26px;
+}
+
+.status-todo{
+background:#fff3cd;
+}
+
+.status-bezig{
+background:#d1ecf1;
+}
+
+.status-klaar{
+background:#d4edda;
+}
+
+tr.dragging{
+opacity:0.4;
+}
+
+.actions button{
+font-size:12px;
+padding:4px 6px;
+}
 </style>
+
 </head>
 <body>
 
 <h2>Verbouwing Todo</h2>
+
 <div style="text-align:center;">
-<button id="btnAdd">Nieuwe taak</button>
-<button id="btnCSV">Download CSV</button>
+<button onclick="addRow()">Nieuwe taak</button>
+<button onclick="downloadCSV()">Download CSV</button>
 </div>
-<br>
+
 <div class="table-wrapper">
 <table id="todoTable">
+
 <thead>
 <tr>
 <th>Ruimte</th>
@@ -47,207 +112,385 @@ textarea{resize:vertical; min-height:24px;}
 <th>Acties</th>
 </tr>
 </thead>
+
 <tbody></tbody>
+
 </table>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded",function(){
 
-let names=["jeroen","ans","jasmijn"];
-let ruimtes=[];
+let ruimtes=[]
+let names=["jeroen","ans","jasmijn"]
 
-// dropdown maken met juiste value
-function createDropdown(list,row,value){
-  let select=document.createElement("select");
-  list.forEach(v=>{
-    let o=document.createElement("option");
-    o.text=v;
-    o.value=v;  // belangrijk: value = naam
-    select.add(o);
-  });
-  let add=document.createElement("option"); 
-  add.text="Nieuw item..."; 
-  add.value="__nieuw__"; 
-  select.add(add);
 
-  if(value) select.value=value;
 
-  select.addEventListener("change",function(){
-    if(this.value==="__nieuw__"){
-      let newItem=prompt("Nieuwe invoer:");
-      if(newItem){
-        list.push(newItem);
-        let o = new Option(newItem,newItem);
-        this.add(o);
-        this.value=newItem;
-        updateAllDropdowns(list,this);
-      } else { this.value=""; }
-    }
-    saveTable();
-  });
-  return select;
+function createDropdown(list,value){
+
+let select=document.createElement("select")
+
+list.forEach(v=>{
+let o=document.createElement("option")
+o.text=v
+o.value=v
+select.add(o)
+})
+
+let add=document.createElement("option")
+add.text="Nieuw item..."
+add.value="nieuw"
+select.add(add)
+
+select.value=value||""
+
+select.onchange=function(){
+
+if(this.value==="nieuw"){
+
+let n=prompt("Nieuwe invoer")
+
+if(n){
+
+list.push(n)
+
+let o=new Option(n,n)
+this.add(o)
+
+this.value=n
+
+updateAllDropdowns()
+
 }
 
-// update alle dropdowns
-function updateAllDropdowns(list,currentSelect){
-  document.querySelectorAll("#todoTable tbody tr").forEach(tr=>{
-    tr.querySelectorAll("td select").forEach(sel=>{
-      if(sel!==currentSelect && list.includes(sel.value)){
-        if(!Array.from(sel.options).some(o=>o.value===sel.value)){
-          sel.add(new Option(sel.value,sel.value));
-        }
-      }
-    });
-  });
 }
 
-function createStatusDropdown(row,value="todo"){
-  let select=document.createElement("select");
-  ["todo","bezig","klaar"].forEach(s=>{ let o=document.createElement("option"); o.text=s; o.value=s; select.add(o); });
-  select.value=value;
-  select.onchange=function(){
-    row.classList.remove("status-todo","status-bezig","status-klaar");
-    row.classList.add("status-"+this.value);
-    saveTable();
-  };
-  return select;
+saveTable()
+
 }
 
-// textarea cel
-function createTextCell(row,val=""){
-  let cell=row.insertCell();
-  let textarea=document.createElement("textarea");
-  textarea.value=val;
-  textarea.addEventListener('input',function(){ this.style.height='auto'; this.style.height=this.scrollHeight+'px'; saveTable(); });
-  textarea.addEventListener("change",saveTable);
-  cell.appendChild(textarea);
-  return textarea;
+return select
 }
+
+
+
+function updateAllDropdowns(){
+
+document.querySelectorAll("#todoTable tbody tr").forEach(r=>{
+
+let ruimte=r.cells[0].querySelector("select")
+let wie=r.cells[2].querySelector("select")
+
+ruimtes.forEach(v=>{
+if(![...ruimte.options].some(o=>o.value===v)){
+ruimte.add(new Option(v,v))
+}
+})
+
+names.forEach(v=>{
+if(![...wie.options].some(o=>o.value===v)){
+wie.add(new Option(v,v))
+}
+})
+
+})
+
+}
+
+
+
+function createTextarea(val=""){
+
+let t=document.createElement("textarea")
+
+t.value=val
+
+t.oninput=function(){
+
+this.style.height="auto"
+this.style.height=this.scrollHeight+"px"
+
+saveTable()
+
+}
+
+return t
+
+}
+
+
 
 function addRow(data={}){
-  let table=document.querySelector("#todoTable tbody");
-  let row=table.insertRow();
-  row.draggable=true;
 
-  // Ruimte
-  if(data.ruimte && !ruimtes.includes(data.ruimte)) ruimtes.push(data.ruimte);
-  let cell=row.insertCell();
-  let ruimteSelect=createDropdown(ruimtes,row,data.ruimte||"");
-  cell.appendChild(ruimteSelect);
+let tbody=document.querySelector("#todoTable tbody")
 
-  // Actie textarea
-  createTextCell(row,data.actie||"");
+let row=tbody.insertRow()
 
-  // Wie dropdown
-  if(data.wie && !names.includes(data.wie)) names.push(data.wie);
-  let cellWie=row.insertCell();
-  let nameSelect=createDropdown(names,row,data.wie||"");
-  cellWie.appendChild(nameSelect);
+row.draggable=true
 
-  createTextCell(row,data.afhankelijk||"");
 
-  let hw=row.insertCell();
-  let checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=data.hardware||false; checkbox.onchange=saveTable; hw.appendChild(checkbox);
 
-  let status=row.insertCell();
-  let statusDropdown=createStatusDropdown(row,data.status||"todo");
-  status.appendChild(statusDropdown);
-  row.classList.add("status-"+(data.status||"todo"));
-
-  let deadline=row.insertCell(); let date=document.createElement("input"); date.type="date"; date.value=data.deadline||""; date.onchange=saveTable; deadline.appendChild(date);
-  createTextCell(row,data.kosten||"");
-  createTextCell(row,data.notities||"");
-  createTextCell(row,data.link||"");
-
-  let actions=row.insertCell(); actions.classList.add("actions");
-  let del=document.createElement("button"); del.innerText="X"; del.onclick=()=>{row.remove(); saveTable();};
-  actions.appendChild(del);
-
-  // Drag & drop
-  row.addEventListener("dragstart",(e)=>{ e.dataTransfer.setData("text/plain",row.rowIndex); row.classList.add("dragging"); });
-  row.addEventListener("dragend",(e)=>{ row.classList.remove("dragging"); });
-  row.addEventListener("dragover",(e)=>{ e.preventDefault(); });
-  row.addEventListener("drop",(e)=>{
-    e.preventDefault();
-    const draggedIndex=e.dataTransfer.getData("text/plain");
-    const draggedRow=table.rows[draggedIndex-1];
-    const targetRow=row;
-    if(draggedRow===targetRow) return;
-    if(Array.from(table.rows).indexOf(draggedRow)<Array.from(table.rows).indexOf(targetRow)){
-      table.insertBefore(draggedRow,targetRow.nextSibling);
-    } else{ table.insertBefore(draggedRow,targetRow); }
-    saveTable();
-  });
-
-  saveTable();
+if(data.ruimte && !ruimtes.includes(data.ruimte)){
+ruimtes.push(data.ruimte)
 }
+
+
+
+let ruimte=row.insertCell()
+
+ruimte.appendChild(createDropdown(ruimtes,data.ruimte))
+
+
+
+let actie=row.insertCell()
+
+actie.appendChild(createTextarea(data.actie))
+
+
+
+if(data.wie && !names.includes(data.wie)){
+names.push(data.wie)
+}
+
+let wie=row.insertCell()
+
+wie.appendChild(createDropdown(names,data.wie))
+
+
+
+let afh=row.insertCell()
+
+afh.appendChild(createTextarea(data.afhankelijk))
+
+
+
+let hw=row.insertCell()
+
+let cb=document.createElement("input")
+
+cb.type="checkbox"
+cb.checked=data.hardware||false
+cb.onchange=saveTable
+
+hw.appendChild(cb)
+
+
+
+let status=row.insertCell()
+
+let s=document.createElement("select")
+
+;["todo","bezig","klaar"].forEach(v=>{
+let o=new Option(v,v)
+s.add(o)
+})
+
+s.value=data.status||"todo"
+
+row.classList.add("status-"+s.value)
+
+s.onchange=function(){
+
+row.classList.remove("status-todo","status-bezig","status-klaar")
+row.classList.add("status-"+this.value)
+
+saveTable()
+
+}
+
+status.appendChild(s)
+
+
+
+let dl=row.insertCell()
+
+let date=document.createElement("input")
+
+date.type="date"
+date.value=data.deadline||""
+date.onchange=saveTable
+
+dl.appendChild(date)
+
+
+
+let kosten=row.insertCell()
+
+kosten.appendChild(createTextarea(data.kosten))
+
+
+
+let not=row.insertCell()
+
+not.appendChild(createTextarea(data.notities))
+
+
+
+let link=row.insertCell()
+
+link.appendChild(createTextarea(data.link))
+
+
+
+let act=row.insertCell()
+
+act.className="actions"
+
+let del=document.createElement("button")
+
+del.innerText="X"
+
+del.onclick=function(){
+
+row.remove()
+saveTable()
+
+}
+
+act.appendChild(del)
+
+
+
+row.addEventListener("dragstart",e=>{
+row.classList.add("dragging")
+e.dataTransfer.setData("text/plain","drag")
+})
+
+row.addEventListener("dragend",e=>{
+row.classList.remove("dragging")
+saveTable()
+})
+
+row.addEventListener("dragover",e=>{
+e.preventDefault()
+})
+
+row.addEventListener("drop",e=>{
+
+e.preventDefault()
+
+let dragging=document.querySelector(".dragging")
+
+if(dragging!==row){
+
+tbody.insertBefore(dragging,row)
+
+}
+
+})
+
+saveTable()
+
+}
+
+
 
 function saveTable(){
-  let rows=document.querySelectorAll("#todoTable tbody tr");
-  let data=[];
-  rows.forEach(r=>{
-    let cells=r.cells;
-    data.push({
-      ruimte:cells[0].querySelector("select").value,
-      actie:cells[1].firstChild.value,
-      wie:cells[2].querySelector("select").value,
-      afhankelijk:cells[3].firstChild.value,
-      hardware:cells[4].firstChild.checked,
-      status:cells[5].firstChild.value,
-      deadline:cells[6].firstChild.value,
-      kosten:cells[7].firstChild.value,
-      notities:cells[8].firstChild.value,
-      link:cells[9].firstChild.value
-    });
-  });
-  localStorage.setItem("verbouwingTodo",JSON.stringify(data));
+
+let rows=document.querySelectorAll("#todoTable tbody tr")
+
+let data=[]
+
+rows.forEach(r=>{
+
+let c=r.cells
+
+data.push({
+
+ruimte:c[0].querySelector("select").value,
+
+actie:c[1].firstChild.value,
+
+wie:c[2].querySelector("select").value,
+
+afhankelijk:c[3].firstChild.value,
+
+hardware:c[4].firstChild.checked,
+
+status:c[5].firstChild.value,
+
+deadline:c[6].firstChild.value,
+
+kosten:c[7].firstChild.value,
+
+notities:c[8].firstChild.value,
+
+link:c[9].firstChild.value
+
+})
+
+})
+
+localStorage.setItem("verbouwingTodo",JSON.stringify(data))
+
 }
+
+
 
 function loadTable(){
-  let table=document.querySelector("#todoTable tbody");
-  table.innerHTML="";
-  let data=localStorage.getItem("verbouwingTodo");
-  if(!data) return;
-  JSON.parse(data).forEach(d=>addRow(d));
+
+let data=localStorage.getItem("verbouwingTodo")
+
+if(!data) return
+
+JSON.parse(data).forEach(d=>addRow(d))
+
 }
+
+
 
 function downloadCSV(){
-  let rows=document.querySelectorAll("#todoTable tr");
-  let csv=[];
-  rows.forEach(r=>{
-    let cols=r.querySelectorAll("th,td");
-    let row=[];
-    cols.forEach((c,i)=>{
-      if(i===4){ let checkbox=c.querySelector("input"); row.push(checkbox && checkbox.checked?"ja":"nee"); }
-      else{ let input=c.querySelector("input,select,textarea"); row.push(input?input.value:c.innerText); }
-    });
-    csv.push(row.join(","));
-  });
-  let blob=new Blob([csv.join("\n")],{type:"text/csv"});
-  let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="verbouwing_todo.csv"; a.click();
+
+let rows=document.querySelectorAll("#todoTable tr")
+
+let csv=[]
+
+rows.forEach(r=>{
+
+let cols=r.querySelectorAll("th,td")
+
+let row=[]
+
+cols.forEach((c,i)=>{
+
+if(i===4){
+
+let checkbox=c.querySelector("input")
+
+row.push(checkbox && checkbox.checked?"ja":"nee")
+
 }
 
-document.getElementById("btnAdd").addEventListener("click",()=>addRow());
-document.getElementById("btnCSV").addEventListener("click",downloadCSV);
-loadTable();
+else{
 
-// Resizable kolommen
-const table=document.getElementById("todoTable");
-const ths=table.querySelectorAll("th");
-ths.forEach(th=>{
-  let startX, startWidth;
-  th.addEventListener("mousedown",e=>{
-    if(e.target!==th) return;
-    startX=e.pageX;
-    startWidth=th.offsetWidth;
-    function doDrag(e){ th.style.width=(startWidth + e.pageX - startX) + "px"; }
-    function stopDrag(){ document.removeEventListener("mousemove",doDrag); document.removeEventListener("mouseup",stopDrag); }
-    document.addEventListener("mousemove",doDrag);
-    document.addEventListener("mouseup",stopDrag);
-  });
-});
+let input=c.querySelector("input,select,textarea")
+
+row.push(input?input.value:c.innerText)
+
+}
+
+})
+
+csv.push(row.join(","))
+
+})
+
+let blob=new Blob([csv.join("\n")],{type:"text/csv"})
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="verbouwing_todo.csv"
+
+a.click()
+
+}
+
+
+
+loadTable()
 
 </script>
+
 </body>
 </html>
